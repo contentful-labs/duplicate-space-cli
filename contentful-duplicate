@@ -1,0 +1,33 @@
+#! /bin/sh
+
+# Reference Space ID (the space ID you want to copy from)
+# Get this ID by running the following command from your terminal
+#     $ contentful space list
+REFSPACEID=tr7e0exvc0vn
+
+# Colours for text
+RESET=$(tput sgr0)
+BOLD=$(tput bold)
+GREEN=$(tput setaf 2)
+CYAN=$(tput setaf 6)
+
+# Ask for name of new space
+echo "\n${GREEN}?${RESET} ${BOLD}What do you want to name your new space?${RESET}${CYAN}"
+read SPACENAME
+
+# Export data from Contentful
+echo "${RESET}Exporting content types"
+contentful space export --space-id ${REFSPACEID} --skip-content --skip-roles --skip-webhooks --content-file ctflexport.json >/dev/null
+echo "Content type exported to ctflexport.json"
+
+# Create a new space
+echo "Creating new space ${CYAN}${SPACENAME}${RESET}"
+SPACEID=$(contentful space create --name "$SPACENAME" --yes --org 4KsF7XfUoUpxSyJD8N76CS | awk -F '[()]' '{print $2}' | xargs)
+echo "${GREEN}Created space ${CYAN}${SPACENAME} ${GREEN}(${CYAN}${SPACEID}${RESET}${GREEN})${RESET}"
+
+# Import content types into the new space
+echo "Importing content types into space ${CYAN}${SPACENAME}${RESET} (${CYAN}${SPACEID}${RESET})"
+contentful space import --space-id ${SPACEID} --content-model-only --content-file ctflexport.json >/dev/null
+
+# Success message
+echo "✨ ${GREEN}Space created and content model imported. Manage your new space at ${CYAN}https://app.contentful.com/spaces/${SPACEID}${GREEN}.${RESET}"
